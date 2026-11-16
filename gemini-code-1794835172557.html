@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 縣市長選舉當選預測與分析（全台 22 縣市完整版）</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .hero-gradient {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        }
+        .party-kmt { border-color: #1b94e0; background-color: #f0f9ff; }
+        .party-dpp { border-color: #1b9e4b; background-color: #f0fdf4; }
+        .party-tpp { border-color: #28c7c7; background-color: #f0fdfa; }
+        .party-ind { border-color: #94a3b8; background-color: #f8fafc; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 flex flex-col justify-between font-sans">
+
+    <!-- Header / Hero Section -->
+    <header class="hero-gradient text-white py-8 px-4 shadow-xl border-b border-slate-700">
+        <div class="max-w-6xl mx-auto text-center space-y-3">
+            <div class="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/20 text-amber-300 rounded-full text-xs font-semibold border border-amber-500/30 mb-1">
+                <i class="fa-solid fa-vote-yea"></i> 全台 22 縣市即時預測戰情室
+            </div>
+            <h1 class="text-3xl md:text-5xl font-black tracking-tight text-white">
+                2026 縣市長選舉當選預測系統
+            </h1>
+            <p class="text-slate-300 text-sm md:text-base max-w-2xl mx-auto">
+                整合六都與 16 縣市主要選將布局，即時演算全台政黨版圖消長與互動情境模擬。
+            </p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-4 py-8 w-full flex-grow space-y-6">
+
+        <!-- 全台 22 縣市預估總席次即時儀表板 -->
+        <section class="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+            <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-100 pb-3">
+                <h2 class="text-base md:text-lg font-black text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-landmark text-indigo-600"></i>
+                    全台 22 縣市預估總席次分佈（隨下方模擬即時連動）
+                </h2>
+                <span id="swing-badge" class="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
+                    基準民調模型 (0%)
+                </span>
+            </div>
+
+            <!-- 席次數字卡片 -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                <div class="p-3 rounded-xl bg-sky-50 border border-sky-200">
+                    <div class="text-xs font-bold text-sky-700">中國國民黨 (藍)</div>
+                    <div class="text-2xl md:text-3xl font-black text-sky-600 mt-0.5"><span id="seat-kmt">0</span> <span class="text-xs font-bold">席</span></div>
+                </div>
+                <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+                    <div class="text-xs font-bold text-emerald-700">民主進步黨 (綠)</div>
+                    <div class="text-2xl md:text-3xl font-black text-emerald-600 mt-0.5"><span id="seat-dpp">0</span> <span class="text-xs font-bold">席</span></div>
+                </div>
+                <div class="p-3 rounded-xl bg-teal-50 border border-teal-200">
+                    <div class="text-xs font-bold text-teal-700">台灣民眾黨 (白)</div>
+                    <div class="text-2xl md:text-3xl font-black text-teal-600 mt-0.5"><span id="seat-tpp">0</span> <span class="text-xs font-bold">席</span></div>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <div class="text-xs font-bold text-slate-600">無黨籍 / 地方勢力</div>
+                    <div class="text-2xl md:text-3xl font-black text-slate-700 mt-0.5"><span id="seat-ind">0</span> <span class="text-xs font-bold">席</span></div>
+                </div>
+            </div>
+
+            <!-- 堆疊長條圖 -->
+            <div class="space-y-1.5">
+                <div class="w-full h-5 bg-slate-200 rounded-full overflow-hidden flex shadow-inner">
+                    <div id="bar-kmt" class="bg-[#1b94e0] h-full transition-all duration-300 flex items-center justify-center text-[11px] font-bold text-white" style="width: 0%"></div>
+                    <div id="bar-tpp" class="bg-[#28c7c7] h-full transition-all duration-300 flex items-center justify-center text-[11px] font-bold text-white" style="width: 0%"></div>
+                    <div id="bar-ind" class="bg-[#64748b] h-full transition-all duration-300 flex items-center justify-center text-[11px] font-bold text-white" style="width: 0%"></div>
+                    <div id="bar-dpp" class="bg-[#1b9e4b] h-full transition-all duration-300 flex items-center justify-center text-[11px] font-bold text-white" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between text-[11px] text-slate-400 font-medium px-1">
+                    <span>過半門檻：12 席</span>
+                    <span>總計 22 縣市</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 區域快速選擇欄 -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+            <label for="city-select" class="font-bold text-slate-700 flex items-center gap-2">
+                <i class="fa-solid fa-location-dot text-indigo-600"></i> 切換檢視縣市（全台 22 縣市）：
+            </label>
+            <select id="city-select" onchange="loadCityData()" class="px-4 py-2 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition cursor-pointer text-sm md:text-base flex-grow md:flex-grow-0">
+                <optgroup label="直轄市（六都）">
+                    <option value="taipei">臺北市（蔣萬安 vs 沈伯洋）</option>
+                    <option value="newtaipei">新北市（李四川 vs 蘇巧慧）</option>
+                    <option value="taoyuan">桃園市（張善政 vs 黃世杰）</option>
+                    <option value="taichung">臺中市（江啟臣 vs 何欣純）</option>
+                    <option value="tainan">臺南市（謝龍介 vs 陳亭妃）</option>
+                    <option value="kaohsiung">高雄市（柯志恩 vs 賴瑞隆）</option>
+                </optgroup>
+                <optgroup label="北部縣市（基宜竹苗）">
+                    <option value="keelung">基隆市（謝國樑 vs 童子瑋）</option>
+                    <option value="yilan">宜蘭縣（吳宗憲 vs 林國漳）</option>
+                    <option value="hsinchucity">新竹市（高虹安 vs 莊競程 vs 何志勇）</option>
+                    <option value="hsinchucounty">新竹縣（徐欣瑩 vs 鄭朝方）</option>
+                    <option value="miaoli">苗栗縣（鍾東錦 vs 陳品安）</option>
+                </optgroup>
+                <optgroup label="中部縣市（彰投雲）">
+                    <option value="changhua">彰化縣（魏平政 vs 陳素月 vs 邱建富）</option>
+                    <option value="nantou">南投縣（許淑華 vs 温世政）</option>
+                    <option value="yunlin">雲林縣（張嘉郡 vs 劉建國）</option>
+                </optgroup>
+                <optgroup label="南部縣市（嘉嘉屏）">
+                    <option value="chiayicity">嘉義市（王美惠 vs 張啓楷）</option>
+                    <option value="chiayicounty">嘉義縣（蔡易餘 vs 吳品叡）</option>
+                    <option value="pingtung">屏東縣（周春米 vs 蘇清泉）</option>
+                </optgroup>
+                <optgroup label="東部與離島（花東澎金馬）">
+                    <option value="hualien">花蓮縣（游淑貞 vs 張峻 vs 魏嘉賢）</option>
+                    <option value="taitung">臺東縣（吳秀華 vs 陳瑩）</option>
+                    <option value="penghu">澎湖縣（陳振中 vs 吳淑瑾 vs 葉竹林）</option>
+                    <option value="kinmen">金門縣（陳玉珍 vs 李文良）</option>
+                    <option value="lienchiang">連江縣（王忠銘 vs 曹爾元）</option>
+                </optgroup>
+            </select>
+        </div>
+
+        <!-- 核心選情簡介與動態估計區 -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- 左側：候選人支持度與聲勢預測 -->
+            <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+                <div class="flex flex-wrap justify-between items-center gap-2 border-b pb-4">
+                    <div>
+                        <h2 id="city-title" class="text-2xl font-black text-slate-800">選務區</h2>
+                        <p id="city-subtitle" class="text-xs text-slate-500 mt-0.5">主要參選人對決態勢與模型勝率估算</p>
+                    </div>
+                    <span id="battle-status" class="px-3 py-1 text-xs font-bold rounded-full bg-red-100 text-red-600">
+                        激戰區
+                    </span>
+                </div>
+
+                <!-- 候選人動態列表 -->
+                <div id="candidates-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- JavaScript 動態注入 -->
+                </div>
+
+                <!-- 勝率估計圓餅圖 -->
+                <div class="pt-4 border-t border-slate-100">
+                    <h3 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-pie text-indigo-500"></i> 該縣市模擬勝率分佈（總和 100%）
+                    </h3>
+                    <div class="w-full max-w-xs mx-auto h-52">
+                        <canvas id="predictionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側：使用者互動預測投票 -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between space-y-6">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 border-b pb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-user-check text-emerald-500"></i> 你的當選預測投票
+                    </h3>
+                    <p class="text-xs text-slate-500 my-3">
+                        點選你看好在此縣市勝出的候選人（每縣市限投一票，可隨時點擊改投）。
+                    </p>
+
+                    <div id="user-vote-options" class="space-y-3">
+                        <!-- 動態產生選項按鈕 -->
+                    </div>
+                </div>
+
+                <!-- 社群投票民調結果統計 -->
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-bold text-slate-600">本機累積預測統計</span>
+                        <span id="total-user-votes" class="text-xs text-slate-400">總投數: 0</span>
+                    </div>
+                    <div id="user-vote-results" class="space-y-2.5">
+                        <!-- 動態渲染長條圖 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 互動勝率微調試算器 (What-If Simulation) -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between border-b pb-3">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-indigo-600 text-xl"></i>
+                    <h3 class="text-lg font-bold text-slate-800">全台選情風向模擬器（What-If Simulation）</h3>
+                </div>
+                <button onclick="resetSimulation()" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition">
+                    重設為 0%
+                </button>
+            </div>
+            <p class="text-xs text-slate-500">
+                拖拉下方滑桿模擬「執政黨整體聲勢 / 中間選民擺盪」，系統將同步重算<strong>當前縣市勝率</strong>與<strong>上方全台 22 縣市預估總席次</strong>：
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                <div class="space-y-2">
+                    <div class="flex justify-between text-xs font-bold">
+                        <span class="text-sky-600">← 利多在野陣營 (-15%)</span>
+                        <span id="slider-value" class="text-indigo-600 text-sm">0%</span>
+                        <span class="text-emerald-600">利多執政黨 (+15%) →</span>
+                    </div>
+                    <input type="range" id="swing-slider" min="-15" max="15" value="0" oninput="adjustSimulation()" class="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                </div>
+                <div class="p-3.5 bg-indigo-50 border border-indigo-100 rounded-xl text-xs text-indigo-900 leading-relaxed">
+                    <i class="fa-solid fa-circle-info mr-1"></i>
+                    <strong>演算規則：</strong> 正值代表整體大環境有利執政黨（綠營）；負值代表有利在野陣營（藍、白及在野無黨籍）。各選區勝率經正規化處理，嚴格維持總和 100%。
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-6 text-center text-xs border-t border-slate-800">
+        <p>2026 縣市長大選預測展示系統（全台 22 縣市完整版） · 數據僅供選舉研究與互動模擬展示</p>
+    </footer>
+
+    <!-- JS 邏輯 -->
+    <script>
+        // 2026 全台 22 縣市長選舉主要候選人與基準預測資料庫
+        const electionData = {
+            // === 直轄市（六都） ===
+            taipei: {
+                name: "臺北市",
+                status: "現任守成 vs 綠營奇兵",
+                candidates: [
+                    { name: "蔣萬安", party: "kmt", partyName: "中國國民黨", baseRate: 54, tag: "現任尋求連任" },
+                    { name: "沈伯洋", party: "dpp", partyName: "民主進步黨", baseRate: 46, tag: "立委挑戰" }
+                ]
+            },
+            newtaipei: {
+                name: "新北市",
+                status: "超級一級激戰區",
+                candidates: [
+                    { name: "李四川", party: "kmt", partyName: "中國國民黨 (藍白合作)", baseRate: 51, tag: "副市長參選" },
+                    { name: "蘇巧慧", party: "dpp", partyName: "民主進步黨", baseRate: 49, tag: "立委轉戰" }
+                ]
+            },
+            taoyuan: {
+                name: "桃園市",
+                status: "藍營優勢連任區",
+                candidates: [
+                    { name: "張善政", party: "kmt", partyName: "中國國民黨", baseRate: 58, tag: "現任尋求連任" },
+                    { name: "黃世杰", party: "dpp", partyName: "民主進步黨", baseRate: 42, tag: "前立委挑戰" }
+                ]
+            },
+            taichung: {
+                name: "臺中市",
+                status: "藍營穩健領先區",
+                candidates: [
+                    { name: "江啟臣", party: "kmt", partyName: "中國國民黨", baseRate: 56, tag: "立法院副院長" },
+                    { name: "何欣純", party: "dpp", partyName: "民主進步黨", baseRate: 44, tag: "資深立委" }
+                ]
+            },
+            tainan: {
+                name: "臺南市",
+                status: "綠營傳統優勢區",
+                candidates: [
+                    { name: "陳亭妃", party: "dpp", partyName: "民主進步黨", baseRate: 58, tag: "資深立委" },
+                    { name: "謝龍介", party: "kmt", partyName: "中國國民黨", baseRate: 42, tag: "再度對決" }
+                ]
+            },
+            kaohsiung: {
+                name: "高雄市",
+                status: "綠營優勢交棒區",
+                candidates: [
+                    { name: "賴瑞隆", party: "dpp", partyName: "民主進步黨", baseRate: 55, tag: "立委出線" },
+                    { name: "柯志恩", party: "kmt", partyName: "中國國民黨", baseRate: 45, tag: "二度深耕參選" }
+                ]
+            },
+
+            // === 北部縣市（基宜竹苗） ===
+            keelung: {
+                name: "基隆市",
+                status: "五五波緊繃戰區",
+                candidates: [
+                    { name: "謝國樑", party: "kmt", partyName: "中國國民黨", baseRate: 51, tag: "現任尋求連任" },
+                    { name: "童子瑋", party: "dpp", partyName: "民主進步黨", baseRate: 49, tag: "基隆市議長" }
+                ]
+            },
+            yilan: {
+                name: "宜蘭縣",
+                status: "五五波指標搖擺縣",
+                candidates: [
+                    { name: "吳宗憲", party: "kmt", partyName: "中國國民黨", baseRate: 50, tag: "不分區立委" },
+                    { name: "林國漳", party: "dpp", partyName: "民主進步黨", baseRate: 50, tag: "律師公會代表" }
+                ]
+            },
+            hsinchucity: {
+                name: "新竹市",
+                status: "三腳督混戰區",
+                candidates: [
+                    { name: "高虹安", party: "ind", partyName: "無黨籍 (在野支持)", baseRate: 44, tag: "現任尋求連任" },
+                    { name: "莊競程", party: "dpp", partyName: "民主進步黨", baseRate: 41, tag: "前立委挑戰" },
+                    { name: "何志勇", party: "ind", partyName: "無黨籍", baseRate: 15, tag: "學者參選" }
+                ]
+            },
+            hsinchucounty: {
+                name: "新竹縣",
+                status: "藍綠對決激戰區",
+                candidates: [
+                    { name: "徐欣瑩", party: "kmt", partyName: "中國國民黨", baseRate: 53, tag: "立委轉戰" },
+                    { name: "鄭朝方", party: "dpp", partyName: "民主進步黨", baseRate: 47, tag: "竹北市長轉戰" }
+                ]
+            },
+            miaoli: {
+                name: "苗栗縣",
+                status: "現任整合優勢區",
+                candidates: [
+                    { name: "鍾東錦", party: "kmt", partyName: "中國國民黨", baseRate: 62, tag: "現任尋求連任" },
+                    { name: "陳品安", party: "dpp", partyName: "民主進步黨", baseRate: 38, tag: "縣議員挑戰" }
+                ]
+            },
+
+            // === 中部縣市（彰投雲） ===
+            changhua: {
+                name: "彰化縣",
+                status: "中台灣關鍵搖擺縣",
+                candidates: [
+                    { name: "陳素月", party: "dpp", partyName: "民主進步黨", baseRate: 46, tag: "資深立委" },
+                    { name: "魏平政", party: "kmt", partyName: "中國國民黨", baseRate: 44, tag: "律師參選" },
+                    { name: "邱建富", party: "ind", partyName: "無黨籍", baseRate: 10, tag: "前彰化市長" }
+                ]
+            },
+            nantou: {
+                name: "南投縣",
+                status: "藍營現任穩定區",
+                candidates: [
+                    { name: "許淑華", party: "kmt", partyName: "中國國民黨", baseRate: 61, tag: "現任尋求連任" },
+                    { name: "温世政", party: "dpp", partyName: "民主進步黨", baseRate: 39, tag: "醫師挑戰" }
+                ]
+            },
+            yunlin: {
+                name: "雲林縣",
+                status: "地方派系 vs 資深立委",
+                candidates: [
+                    { name: "張嘉郡", party: "kmt", partyName: "中國國民黨", baseRate: 53, tag: "不分區立委" },
+                    { name: "劉建國", party: "dpp", partyName: "民主進步黨", baseRate: 47, tag: "資深立委" }
+                ]
+            },
+
+            // === 南部縣市（嘉嘉屏） ===
+            chiayicity: {
+                name: "嘉義市",
+                status: "藍白合共推 vs 綠營強棒",
+                candidates: [
+                    { name: "王美惠", party: "dpp", partyName: "民主進步黨", baseRate: 52, tag: "資深立委" },
+                    { name: "張啓楷", party: "tpp", partyName: "台灣民眾黨 (藍白共推)", baseRate: 48, tag: "不分區立委" }
+                ]
+            },
+            chiayicounty: {
+                name: "嘉義縣",
+                status: "綠營強勢領先區",
+                candidates: [
+                    { name: "蔡易餘", party: "dpp", partyName: "民主進步黨", baseRate: 61, tag: "資深立委" },
+                    { name: "吳品叡", party: "ind", partyName: "無黨籍 (在野支持)", baseRate: 39, tag: "朴子市長轉戰" }
+                ]
+            },
+            pingtung: {
+                name: "屏東縣",
+                status: "現任守成對決",
+                candidates: [
+                    { name: "周春米", party: "dpp", partyName: "民主進步黨", baseRate: 55, tag: "現任尋求連任" },
+                    { name: "蘇清泉", party: "kmt", partyName: "中國國民黨", baseRate: 45, tag: "再度挑戰" }
+                ]
+            },
+
+            // === 東部與離島（花東澎金馬） ===
+            hualien: {
+                name: "花蓮縣",
+                status: "泛藍分裂三強鼎立",
+                candidates: [
+                    { name: "游淑貞", party: "kmt", partyName: "中國國民黨", baseRate: 44, tag: "吉安鄉長" },
+                    { name: "張峻", party: "ind", partyName: "無黨籍 (綠營奧援)", baseRate: 36, tag: "花蓮縣議長" },
+                    { name: "魏嘉賢", party: "ind", partyName: "無黨籍", baseRate: 20, tag: "前花蓮市長" }
+                ]
+            },
+            taitung: {
+                name: "臺東縣",
+                status: "藍綠女力對決",
+                candidates: [
+                    { name: "吳秀華", party: "kmt", partyName: "中國國民黨", baseRate: 54, tag: "臺東縣議長" },
+                    { name: "陳瑩", party: "dpp", partyName: "民主進步黨", baseRate: 46, tag: "資深立委" }
+                ]
+            },
+            penghu: {
+                name: "澎湖縣",
+                status: "離島多強激戰區",
+                candidates: [
+                    { name: "陳振中", party: "kmt", partyName: "中國國民黨", baseRate: 43, tag: "藍營徵召" },
+                    { name: "吳淑瑾", party: "dpp", partyName: "民主進步黨", baseRate: 41, tag: "綠營徵召" },
+                    { name: "葉竹林", party: "ind", partyName: "無黨籍", baseRate: 16, tag: "前馬公市長" }
+                ]
+            },
+            kinmen: {
+                name: "金門縣",
+                status: "藍營強棒 vs 在地無黨",
+                candidates: [
+                    { name: "陳玉珍", party: "kmt", partyName: "中國國民黨", baseRate: 59, tag: "立法委員" },
+                    { name: "李文良", party: "ind", partyName: "無黨籍", baseRate: 41, tag: "副縣長參選" }
+                ]
+            },
+            lienchiang: {
+                name: "連江縣",
+                status: "藍營連任優勢區",
+                candidates: [
+                    { name: "王忠銘", party: "kmt", partyName: "中國國民黨", baseRate: 63, tag: "現任尋求連任" },
+                    { name: "曹爾元", party: "ind", partyName: "無黨籍", baseRate: 37, tag: "在地挑戰" }
+                ]
+            }
+        };
+
+        let currentCityKey = "taipei";
+        let currentSwingValue = 0;
+        let chartInstance = null;
+
+        // 初始化
+        window.onload = function() {
+            updateNationalSeats(0);
+            loadCityData();
+        };
+
+        // 計算單一縣市調整後且總和為 100% 的勝率陣列
+        function getAdjustedCandidates(candidates, swingValue) {
+            const nonDppCount = candidates.filter(x => x.party !== 'dpp').length;
+            const dppCount = candidates.filter(x => x.party === 'dpp').length;
+
+            let rawRates = candidates.map(c => {
+                let rate = c.baseRate;
+                if (c.party === 'dpp') {
+                    rate += swingValue;
+                } else if (dppCount > 0 && nonDppCount > 0) {
+                    // 有綠營參選的選區，在野陣營均分消長
+                    rate -= (swingValue / nonDppCount);
+                } else {
+                    // 純藍白/無黨對決選區（如金門、連江、花蓮），微幅反映中央執政外溢效應
+                    if (c.party === 'kmt') rate -= (swingValue * 0.4);
+                    else rate += (swingValue * 0.4);
+                }
+                return Math.max(2, rate);
+            });
+
+            const sum = rawRates.reduce((a, b) => a + b, 0);
+            let normalized = rawRates.map(r => Math.round((r / sum) * 100));
+
+            // 修正四捨五入造成的 1% 誤差
+            const diff = 100 - normalized.reduce((a, b) => a + b, 0);
+            if (diff !== 0) {
+                const maxIdx = normalized.indexOf(Math.max(...normalized));
+                normalized[maxIdx] += diff;
+            }
+
+            return candidates.map((c, idx) => ({
+                ...c,
+                adjustedRate: normalized[idx]
+            }));
+        }
+
+        // 計算並更新全台 22 縣市預估總席次長條圖
+        function updateNationalSeats(swingValue) {
+            const counts = { kmt: 0, dpp: 0, tpp: 0, ind: 0 };
+
+            Object.values(electionData).forEach(city => {
+                const adjusted = getAdjustedCandidates(city.candidates, swingValue);
+                // 找出該縣市最高勝率者（平手時取第一位）
+                let winner = adjusted[0];
+                for (let i = 1; i < adjusted.length; i++) {
+                    if (adjusted[i].adjustedRate > winner.adjustedRate) {
+                        winner = adjusted[i];
+                    }
+                }
+                counts[winner.party] = (counts[winner.party] || 0) + 1;
+            });
+
+            // 更新數字卡片
+            document.getElementById('seat-kmt').innerText = counts.kmt;
+            document.getElementById('seat-dpp').innerText = counts.dpp;
+            document.getElementById('seat-tpp').innerText = counts.tpp;
+            document.getElementById('seat-ind').innerText = counts.ind;
+
+            // 更新堆疊長條圖寬度與標籤
+            const total = 22;
+            const updateBar = (id, count) => {
+                const el = document.getElementById(id);
+                const pct = (count / total) * 100;
+                el.style.width = `${pct}%`;
+                el.innerText = count > 0 ? `${count}` : '';
+            };
+
+            updateBar('bar-kmt', counts.kmt);
+            updateBar('bar-tpp', counts.tpp);
+            updateBar('bar-ind', counts.ind);
+            updateBar('bar-dpp', counts.dpp);
+
+            // 更新風向徽章
+            const badge = document.getElementById('swing-badge');
+            if (swingValue === 0) {
+                badge.innerText = "基準民調模型 (0%)";
+                badge.className = "text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600";
+            } else if (swingValue > 0) {
+                badge.innerText = `模擬風向：執政黨 +${swingValue}%`;
+                badge.className = "text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700";
+            } else {
+                badge.innerText = `模擬風向：在野陣營 +${Math.abs(swingValue)}%`;
+                badge.className = "text-xs font-bold px-2.5 py-1 rounded-full bg-sky-100 text-sky-700";
+            }
+        }
+
+        function loadCityData() {
+            currentCityKey = document.getElementById('city-select').value;
+            const cityData = electionData[currentCityKey];
+
+            document.getElementById('city-title').innerText = `${cityData.name} 競選預測`;
+            document.getElementById('battle-status').innerText = cityData.status;
+
+            renderCandidates(cityData.candidates, currentSwingValue);
+            renderChart(cityData.candidates, currentSwingValue);
+            renderUserVoteSection(cityData.candidates);
+        }
+
+        function renderCandidates(candidates, swingValue) {
+            const container = document.getElementById('candidates-container');
+            container.innerHTML = '';
+            const updatedList = getAdjustedCandidates(candidates, swingValue);
+
+            container.className = `grid grid-cols-1 ${updatedList.length >= 3 ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`;
+
+            updatedList.forEach((c) => {
+                const barColor = c.party === 'kmt' ? 'bg-[#1b94e0]' :
+                                 c.party === 'dpp' ? 'bg-[#1b9e4b]' :
+                                 c.party === 'tpp' ? 'bg-[#28c7c7]' : 'bg-slate-500';
+
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-xl border-2 party-${c.party} flex flex-col justify-between space-y-3 transition`;
+                card.innerHTML = `
+                    <div class="flex justify-between items-start gap-2">
+                        <div>
+                            <span class="text-xs font-bold px-2 py-0.5 rounded bg-white/80 border border-slate-200 text-slate-600">${c.partyName}</span>
+                            <h4 class="text-2xl font-black text-slate-800 mt-1">${c.name}</h4>
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-1 bg-slate-800 text-white rounded-md shrink-0">${c.tag}</span>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center text-sm font-bold mb-1">
+                            <span>預測勝算率</span>
+                            <span class="text-slate-900 font-extrabold text-base">${c.adjustedRate}%</span>
+                        </div>
+                        <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                            <div class="${barColor} h-full transition-all duration-300" style="width: ${c.adjustedRate}%"></div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderChart(candidates, swingValue) {
+            const ctx = document.getElementById('predictionChart').getContext('2d');
+            const updatedList = getAdjustedCandidates(candidates, swingValue);
+
+            const labels = updatedList.map(c => `${c.name} (${c.adjustedRate}%)`);
+            const dataValues = updatedList.map(c => c.adjustedRate);
+            const backgroundColors = updatedList.map(c => {
+                if (c.party === 'kmt') return '#1b94e0';
+                if (c.party === 'dpp') return '#1b9e4b';
+                if (c.party === 'tpp') return '#28c7c7';
+                return '#64748b';
+            });
+
+            if (chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataValues,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        function adjustSimulation() {
+            currentSwingValue = parseInt(document.getElementById('swing-slider').value);
+            document.getElementById('slider-value').innerText = (currentSwingValue > 0 ? `+${currentSwingValue}%` : `${currentSwingValue}%`);
+            
+            const cityData = electionData[currentCityKey];
+            renderCandidates(cityData.candidates, currentSwingValue);
+            renderChart(cityData.candidates, currentSwingValue);
+            updateNationalSeats(currentSwingValue);
+        }
+
+        function resetSimulation() {
+            document.getElementById('swing-slider').value = 0;
+            adjustSimulation();
+        }
+
+        // --- 本地投票記錄邏輯（每人每縣市限投一票，可改投） ---
+        function getStoredVotes() {
+            return JSON.parse(localStorage.getItem('election_user_votes_2026') || '{}');
+        }
+
+        function getUserChoiceHistory() {
+            return JSON.parse(localStorage.getItem('election_user_choices_2026') || '{}');
+        }
+
+        function renderUserVoteSection(candidates) {
+            const optionsDiv = document.getElementById('user-vote-options');
+            const history = getUserChoiceHistory();
+            const myChoice = history[currentCityKey];
+            optionsDiv.innerHTML = '';
+
+            candidates.forEach((c) => {
+                const isSelected = myChoice === c.name;
+                const btn = document.createElement('button');
+                btn.onclick = () => castUserVote(c.name);
+                btn.className = isSelected
+                    ? "w-full py-2.5 px-4 bg-indigo-600 text-white border border-indigo-600 rounded-xl font-bold transition flex justify-between items-center shadow-sm text-left"
+                    : "w-full py-2.5 px-4 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 border border-slate-200 rounded-xl font-bold text-slate-700 transition flex justify-between items-center text-left";
+
+                btn.innerHTML = `
+                    <span>${c.name} <span class="text-xs font-normal opacity-80">(${c.partyName})</span></span>
+                    ${isSelected ? '<span class="text-xs bg-white/20 px-2 py-0.5 rounded shrink-0">已選擇</span>' : '<i class="fa-solid fa-chevron-right text-xs text-slate-400"></i>'}
+                `;
+                optionsDiv.appendChild(btn);
+            });
+
+            updateUserVoteResults();
+        }
+
+        function castUserVote(candidateName) {
+            const votes = getStoredVotes();
+            const history = getUserChoiceHistory();
+            const previousChoice = history[currentCityKey];
+
+            if (previousChoice === candidateName) return;
+
+            if (previousChoice) {
+                const oldKey = `${currentCityKey}_${previousChoice}`;
+                votes[oldKey] = Math.max(0, (votes[oldKey] || 1) - 1);
+            }
+
+            const newKey = `${currentCityKey}_${candidateName}`;
+            votes[newKey] = (votes[newKey] || 0) + 1;
+            history[currentCityKey] = candidateName;
+
+            localStorage.setItem('election_user_votes_2026', JSON.stringify(votes));
+            localStorage.setItem('election_user_choices_2026', JSON.stringify(history));
+
+            renderUserVoteSection(electionData[currentCityKey].candidates);
+        }
+
+        function updateUserVoteResults() {
+            const votes = getStoredVotes();
+            const cityData = electionData[currentCityKey];
+            const resultsDiv = document.getElementById('user-vote-results');
+            resultsDiv.innerHTML = '';
+
+            let cityTotal = 0;
+            cityData.candidates.forEach(c => {
+                const key = `${currentCityKey}_${c.name}`;
+                cityTotal += (votes[key] || 0);
+            });
+
+            document.getElementById('total-user-votes').innerText = `總投數: ${cityTotal}`;
+
+            cityData.candidates.forEach(c => {
+                const key = `${currentCityKey}_${c.name}`;
+                const count = votes[key] || 0;
+                const pct = cityTotal > 0 ? Math.round((count / cityTotal) * 100) : 0;
+
+                const row = document.createElement('div');
+                row.className = "text-xs space-y-1";
+                row.innerHTML = `
+                    <div class="flex justify-between font-semibold">
+                        <span>${c.name}</span>
+                        <span class="text-slate-500">${count} 票 (${pct}%)</span>
+                    </div>
+                    <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                        <div class="bg-emerald-500 h-full transition-all duration-300" style="width: ${pct}%"></div>
+                    </div>
+                `;
+                resultsDiv.appendChild(row);
+            });
+        }
+    </script>
+</body>
+</html>
